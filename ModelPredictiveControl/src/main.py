@@ -1,6 +1,8 @@
 import numpy as np
 import cvxpy as cp
 import matplotlib.pyplot as plt
+# from plotter import Plotter
+
 
 '''
 Authors:
@@ -24,19 +26,27 @@ class MPCOptimizer:
         self.delta_t = delta_t
         self.v_max = v_max
         self.obstacles = obstacles
-        print(len(self.obstacles))
+        # print(len(self.obstacles))
         
         
-    def getProblemMatrix(self, goal):
+    def getProblemMatrix(self, goal, time_step = -1):
         '''
         Get q1 and q2 for the problem
         '''
 
-        A = np.ones((self.steps, self.steps)) * self.delta_t**2
+        if time_step == -1:
+            time_step = self.steps
+
+        ones_vector = np.zeros((self.steps, 1))
+        ones_vector[:time_step + 1, :] = 1
+
+        A = (ones_vector @ ones_vector.T) * self.delta_t**2
+        # print(A.shape)
         B = A.copy()
 
-        q1 = 2 * np.ones((self.steps, 1)) * (self.x_start[0] - goal[0]) * self.delta_t
-        q2 = 2 * np.ones((self.steps, 1)) * (self.x_start[1] - goal[1]) * self.delta_t
+        
+        q1 = 2 * ones_vector * (self.x_start[0] - goal[0]) * self.delta_t
+        q2 = 2 * ones_vector * (self.x_start[1] - goal[1]) * self.delta_t
 
         C1 = (self.x_start[0] - goal[0])**2
         C2 = (self.x_start[1] - goal[1])**2
@@ -52,9 +62,9 @@ class MPCOptimizer:
         m = np.zeros(self.steps)
 
         constraints = [X <= h, 
-                       m <= X, 
+                      -h <= X, 
                        Y <= h,
-                       m <= Y]
+                      -h <= Y]
         return constraints
 
     def getObstacleConstraints(self, X, Y, X_star, Y_star):
@@ -64,30 +74,26 @@ class MPCOptimizer:
 
         constraints = []
         
-        if len(self.obstacles) > 0:
-            
+        if len(self.obstacles) > 0:    
             for obs_i in self.obstacles:
-                print(obs_i)
-                prob_matrix = self.getProblemMatrix(obs_i)        
-                
-                A = prob_matrix["A"]
-                B = prob_matrix["B"]
-                q1 = prob_matrix["q1"] 
-                q2 = prob_matrix["q2"] 
-                C1 = prob_matrix["C1"]
-                C2 = prob_matrix["C2"]
+                for t in range(self.steps):
+                    prob_matrix = self.getProblemMatrix(obs_i, t)        
+                    
+                    A = prob_matrix["A"]
+                    B = prob_matrix["B"]
+                    q1 = prob_matrix["q1"] 
+                    q2 = prob_matrix["q2"] 
+                    C1 = prob_matrix["C1"]
+                    C2 = prob_matrix["C2"]
 
-                q1_new = q1.copy() + 2 * self.delta_t**2 * np.sum(X_star)
-                q2_new = q2.copy() + 2 * self.delta_t**2 * np.sum(Y_star)
+                    q1_new = q1.copy() #+ 2 * self.delta_t**2 * np.sum(X_star)
+                    q2_new = q2.copy() #+ 2 * self.delta_t**2 * np.sum(Y_star)
                 
-                # print(X - X_star, X_star.shape)
-                # print(X_star.shape)
-                print(obs_i[2]**2)
-                constraints.append(obs_i[2]**2 <= X_star.T @ A @ X_star + q1.T @ X_star + C1 \
-                                               +  Y_star.T @ B @ Y_star + q2.T @ Y_star + C2 \
-                                               + (2 * A @ X_star + q1_new).T @ (X - X_star.squeeze())   \
-                                               + (2 * B @ Y_star + q2_new).T @ (Y - Y_star.squeeze())   \
-                                                )
+                    constraints.append(obs_i[2]**2 <= X_star.T @ A @ X_star + q1.T @ X_star + C1 \
+                                                   +  Y_star.T @ B @ Y_star + q2.T @ Y_star + C2 \
+                                                   + (2 * A @ X_star + q1_new).T @ (X - X_star.squeeze())   \
+                                                   + (2 * B @ Y_star + q2_new).T @ (Y - Y_star.squeeze())   \
+                                                    )
 
         return constraints
 
@@ -108,6 +114,7 @@ class MPCOptimizer:
         C1 = prob_matrix["C1"]
         C2 = prob_matrix["C2"]
 
+        # print(A.shape, q1.shape)
         constraints = self.getVelocityConstraints(X, Y)
         problem = cp.Problem(cp.Minimize( cp.quad_form(X, A) + q1.T @ X + C1 \
                                        +  cp.quad_form(Y, B) + q2.T @ Y + C2),
@@ -119,9 +126,13 @@ class MPCOptimizer:
         # Solve using obstacle constraints
         
             
-        X_star = np.expand_dims(np.array(X.value), axis = -1)
+        X_star = np.expand_dims(np.array(X.value), axis = -1) 
         Y_star = np.expand_dims(np.array(Y.value), axis = -1)
+        # print(X_star.shape)
+        X_star = X_star + np.random.random(X_star.shape) * 0.1
+        Y_star = Y_star + np.random.random(Y_star.shape) * 0.1
 
+        # print(X_star)
         X = cp.Variable(self.steps)
         Y = cp.Variable(self.steps)    
 
@@ -131,6 +142,14 @@ class MPCOptimizer:
 
         if len(constraints) > 0:
         
+            prob_matrix = self.getProblemMatrix(self.x_goal)
+        
+            A = prob_matrix["A"]
+            B = prob_matrix["B"]
+            q1 = prob_matrix["q1"]
+            q2 = prob_matrix["q2"]
+            C1 = prob_matrix["C1"]
+            C2 = prob_matrix["C2"]
             # Velocity constraints
             constraints.extend(self.getVelocityConstraints(X, Y))
 
@@ -143,7 +162,7 @@ class MPCOptimizer:
             problem.solve(verbose = verbose)
 
             # print(X.value)
-            X_star = np.expand_dims(np.array(X.value), axis = -1)
+            X_star = np.expand_dims(np.array(X.value), axis = -1) 
             Y_star = np.expand_dims(np.array(Y.value), axis = -1)
 
             print(X_star, Y_star)
@@ -158,6 +177,7 @@ class MPCOptimizer:
         Plot the trajectory
         '''
 
+        # print(X)
         position_X = self.x_start[0] + np.cumsum(X) * self.delta_t
         position_Y = self.x_start[1] + np.cumsum(Y) * self.delta_t
 
@@ -168,13 +188,17 @@ class MPCOptimizer:
         plt.plot(position_X[:], position_Y[:])
         plt.plot(self.x_start[0], self.x_start[1], "ro")
         plt.plot(self.x_goal[0], self.x_goal[1], "go")
+
+        for obs in self.obstacles:
+            plt.plot(obs[0], obs[1], 'ro', markersize = obs[2])
+        
         plt.show()
 
         
 
 if __name__ == "__main__":
 
-    optim = MPCOptimizer(x_start=[0, 0], x_goal=[5, 5], v_max=10, steps=30, delta_t = 0.1, obstacles=[[2, 2, 1], [5, 5, 2.0]])
+    optim = MPCOptimizer(x_start=[0, 0], x_goal=[6, 12], v_max=3, steps=10, delta_t = 1, obstacles=[[2, 5, 1],[3, 4, 1], [4, 2, 0.5], [2, 2, 0.5]])
     optim.solve(verbose = True)
 
 
