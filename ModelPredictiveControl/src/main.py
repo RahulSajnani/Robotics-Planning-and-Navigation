@@ -1,7 +1,7 @@
 import numpy as np
 import cvxpy as cp
 import matplotlib.pyplot as plt
-# from plotter import Plotter
+from plotter import Plotter
 
 
 '''
@@ -26,6 +26,7 @@ class MPCOptimizer:
         self.delta_t = delta_t
         self.v_max = v_max
         self.obstacles = obstacles
+        self.plotter = Plotter()
         # print(len(self.obstacles))
         
         
@@ -165,14 +166,12 @@ class MPCOptimizer:
             X_star = np.expand_dims(np.array(X.value), axis = -1) 
             Y_star = np.expand_dims(np.array(Y.value), axis = -1)
 
-            print(X_star, Y_star)
+            # print(X_star, Y_star)
             self.plot(X_star, Y_star)
 
         return X_star, Y_star
 
-    
-    
-    def plot(self, X, Y):
+    def getPath(self, X, Y):
         '''
         Plot the trajectory
         '''
@@ -184,23 +183,34 @@ class MPCOptimizer:
         position_X = np.hstack((self.x_start[0], position_X))
         position_Y = np.hstack((self.x_start[1], position_Y))
 
-    
-        plt.plot(position_X[:], position_Y[:])
-        plt.plot(self.x_start[0], self.x_start[1], "ro")
-        plt.plot(self.x_goal[0], self.x_goal[1], "go")
+        return position_X, position_Y
 
-        for obs in self.obstacles:
-            plt.plot(obs[0], obs[1], 'ro', markersize = obs[2])
+    def plot(self, X_star, Y_star):
         
-        plt.show()
+        path_x, path_y = self.getPath(X_star, Y_star)
+        self.plotter.plot(self.x_start, self.x_goal, self.obstacles, path_x, path_y)
 
+        
         
 
 if __name__ == "__main__":
 
-    optim = MPCOptimizer(x_start=[0, 0], x_goal=[6, 12], v_max=3, steps=10, delta_t = 1, obstacles=[[2, 5, 1],[3, 4, 1], [4, 2, 0.5], [2, 2, 0.5]])
-    optim.solve(verbose = True)
+    ############### Settings ##############################
+    x_start = [0, 0] 
+    x_goal = [8, 12] 
+    v_max = 1
+    steps = 20
+    delta_t = 1
+    obstacles = [[2, 8, 1],
+                 [3, 4, 1], 
+                 [4, 2, 0.5], 
+                 [2, 2, 0.5], 
+                 [8, 6, 1], 
+                 [8, 2, 1]]
+    #######################################################
 
 
-        
+    optim = MPCOptimizer(x_start=x_start, x_goal=x_goal, v_max=v_max, steps=steps, delta_t = delta_t, obstacles=obstacles)
+    X_star, Y_star = optim.solve(verbose = True)
+    print(X_star, Y_star)
     
