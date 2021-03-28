@@ -2,6 +2,13 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 
+'''
+Author:
+    Rahul Sajnani
+Date:
+    21st March 2021
+'''
+
 class Plotter:
 
     def __init__(self):

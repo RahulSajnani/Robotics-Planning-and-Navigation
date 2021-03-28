@@ -5,9 +5,8 @@ from plotter import Plotter
 
 
 '''
-Authors:
+Author:
     Rahul Sajnani
-    Shirish Chandra
 Date:
     21st March 2021
 '''
