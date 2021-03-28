@@ -26,6 +26,9 @@ class MPCOptimizer:
         self.v_max = v_max
         self.obstacles = obstacles
         self.plotter = Plotter()
+        self.trust_region_threshold = 0.1
+        self.randomization_threshold = 0.1
+        self.max_iter = 10
         # print(len(self.obstacles))
         
         
@@ -77,8 +80,8 @@ class MPCOptimizer:
         if len(self.obstacles) > 0:    
             for obs_i in self.obstacles:
                 for t in range(self.steps):
-                    prob_matrix = self.getProblemMatrix(obs_i, t)        
                     
+                    prob_matrix = self.getProblemMatrix(obs_i, t)        
                     A = prob_matrix["A"]
                     B = prob_matrix["B"]
                     q1 = prob_matrix["q1"] 
@@ -86,16 +89,31 @@ class MPCOptimizer:
                     C1 = prob_matrix["C1"]
                     C2 = prob_matrix["C2"]
 
-                    q1_new = q1.copy() #+ 2 * self.delta_t**2 * np.sum(X_star)
-                    q2_new = q2.copy() #+ 2 * self.delta_t**2 * np.sum(Y_star)
-                
-                    constraints.append(obs_i[2]**2 <= X_star.T @ A @ X_star + q1.T @ X_star + C1 \
-                                                   +  Y_star.T @ B @ Y_star + q2.T @ Y_star + C2 \
-                                                   + (2 * A @ X_star + q1_new).T @ (X - X_star.squeeze())   \
-                                                   + (2 * B @ Y_star + q2_new).T @ (Y - Y_star.squeeze())   \
-                                                    )
+                    constraints.append(obs_i[2]**2 <= self.linearization(X, X_star, A, q1, C1) + self.linearization(Y, Y_star, B, q2, C2))
 
         return constraints
+
+
+    def quadraticCost(self, X, A, q1, C1):
+        '''
+        Compute quadratic cost
+        '''
+
+        cost = X.T @ A @ X + q1.T @ X + C1    
+        return cost
+    
+    def linearization(self, X, X_star, A, q1, C1):
+        '''
+        Linearize around X_star
+        '''
+
+        if (X.shape == X_star.shape):
+            linearized_cost = self.quadraticCost(X_star, A, q1, C1) + (2 * A @ X_star + q1).T @ (X - X_star) 
+        else:
+            linearized_cost = self.quadraticCost(X_star, A, q1, C1) + (2 * A @ X_star + q1).T @ (X - X_star.reshape(X.shape)) 
+
+        return linearized_cost
+
 
     def solve(self, verbose = False):
         '''
@@ -124,45 +142,67 @@ class MPCOptimizer:
         X_star = np.expand_dims(np.array(X.value), axis = -1) 
         Y_star = np.expand_dims(np.array(Y.value), axis = -1)
        
-        
-
         # Solve using obstacle constraints if obstacles are present
         if len(self.obstacles) > 0:
-            X_star = X_star + np.random.random(X_star.shape) * 0.2
-            Y_star = Y_star + np.random.random(Y_star.shape) * 0.2
-
-        
-            X = cp.Variable(self.steps)
-            Y = cp.Variable(self.steps)    
-
-            # Obstacle constraints
-            constraints = self.getObstacleConstraints(X, Y, X_star, Y_star)
             
-            prob_matrix = self.getProblemMatrix(self.x_goal)
-        
-            A = prob_matrix["A"]
-            B = prob_matrix["B"]
-            q1 = prob_matrix["q1"]
-            q2 = prob_matrix["q2"]
-            C1 = prob_matrix["C1"]
-            C2 = prob_matrix["C2"]
 
-            # Velocity constraints
-            constraints.extend(self.getVelocityConstraints(X, Y))
+            trust_region = False
+            while(not trust_region):
 
-            # Optimization problem
-            problem = cp.Problem(cp.Minimize(20 * (cp.quad_form(X, A) + q1.T @ X + C1 \
-                                           +  cp.quad_form(Y, B) + q2.T @ Y + C2)),
-                                              constraints)
+                X_star = X_star + np.random.random(X_star.shape) * self.randomization_threshold
+                Y_star = Y_star + np.random.random(Y_star.shape) * self.randomization_threshold
 
-            # Solve the problem
-            problem.solve(verbose = verbose, warm_start = True)
+            
+                X = cp.Variable(self.steps)
+                Y = cp.Variable(self.steps)    
+                print(X.shape)
+                # Obstacle constraints
+                constraints = self.getObstacleConstraints(X, Y, X_star, Y_star)
+                
+                prob_matrix = self.getProblemMatrix(self.x_goal)
+            
+                A = prob_matrix["A"]
+                B = prob_matrix["B"]
+                q1 = prob_matrix["q1"]
+                q2 = prob_matrix["q2"]
+                C1 = prob_matrix["C1"]
+                C2 = prob_matrix["C2"]
 
-            # print(X.value)
-            X_star = np.expand_dims(np.array(X.value), axis = -1) 
-            Y_star = np.expand_dims(np.array(Y.value), axis = -1)
+                # Velocity constraints
+                constraints.extend(self.getVelocityConstraints(X, Y))
 
-            # print(X_star, Y_star)
+                # Optimization problem
+                problem = cp.Problem(cp.Minimize(20 * (cp.quad_form(X, A) + q1.T @ X + C1 \
+                                            +  cp.quad_form(Y, B) + q2.T @ Y + C2)),
+                                                constraints)
+
+                # Solve the problem
+                problem.solve(verbose = verbose, warm_start = True, solver = cp.SCS)
+
+                if X.value is None:
+                    print("No solution")
+                    self.randomization_threshold += 0.1
+
+                    if self.randomization_threshold > 0.4:
+                        print("Please increase number of steps")
+                        exit()
+                    continue
+                    # self.steps += 5
+                    # self.v_max += 0.05
+                
+                X_star_new = np.expand_dims(np.array(X.value), axis = -1) 
+                Y_star_new = np.expand_dims(np.array(Y.value), axis = -1)
+                
+                # Trust region check
+                error = (np.mean(np.abs(X_star - X_star_new)) + np.mean(np.abs(Y_star - Y_star_new))) 
+                if  error <= 2 * self.trust_region_threshold:
+                    trust_region = True
+                
+                print(error, "#"*100)
+                X_star = X_star_new
+                Y_star = Y_star_new
+                
+                # print(X_star, Y_star)
         self.plot(X_star, Y_star)
 
         return X_star, Y_star
@@ -193,22 +233,23 @@ if __name__ == "__main__":
 
     ############### Settings ##############################
     x_start = [0, 0] 
-    x_goal = [11, 10] 
-    v_max = 0.8
-    steps = 30
+    x_goal = [8, 13] 
+    v_max = 0.5
+    steps = 40
     delta_t = 1
     obstacles = [[2, 8, 1],
                  [3, 4, 1], 
                  [4, 2, 0.5], 
                  [2, 2, 0.5], 
                  [8, 6, 1], 
-                 [8, 2, 1]]
+                 [8, 2, 1],
+                 ]
 
     # obstacles = []
     #######################################################
 
 
     optim = MPCOptimizer(x_start=x_start, x_goal=x_goal, v_max=v_max, steps=steps, delta_t = delta_t, obstacles=obstacles)
-    X_star, Y_star = optim.solve(verbose = True)
+    X_star, Y_star = optim.solve(verbose = False)
     print(X_star, Y_star)
     
