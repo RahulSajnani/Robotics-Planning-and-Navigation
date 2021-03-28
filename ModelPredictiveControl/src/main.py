@@ -122,27 +122,23 @@ class MPCOptimizer:
                                         constraints)
         problem.solve(verbose = verbose)
 
-        # print(X.value, Y.value)
-
-        # Solve using obstacle constraints
-        
-            
         X_star = np.expand_dims(np.array(X.value), axis = -1) 
         Y_star = np.expand_dims(np.array(Y.value), axis = -1)
-        # print(X_star.shape)
-        X_star = X_star + np.random.random(X_star.shape) * 0.1
-        Y_star = Y_star + np.random.random(Y_star.shape) * 0.1
-
-        # print(X_star)
-        X = cp.Variable(self.steps)
-        Y = cp.Variable(self.steps)    
-
-        # Obstacle constraints
-        constraints = self.getObstacleConstraints(X, Y, X_star, Y_star)
+       
         
 
-        if len(constraints) > 0:
+        # Solve using obstacle constraints if obstacles are present
+        if len(self.obstacles) > 0:
+            X_star = X_star + np.random.random(X_star.shape) * 0.2
+            Y_star = Y_star + np.random.random(Y_star.shape) * 0.2
+
         
+            X = cp.Variable(self.steps)
+            Y = cp.Variable(self.steps)    
+
+            # Obstacle constraints
+            constraints = self.getObstacleConstraints(X, Y, X_star, Y_star)
+            
             prob_matrix = self.getProblemMatrix(self.x_goal)
         
             A = prob_matrix["A"]
@@ -151,23 +147,24 @@ class MPCOptimizer:
             q2 = prob_matrix["q2"]
             C1 = prob_matrix["C1"]
             C2 = prob_matrix["C2"]
+
             # Velocity constraints
             constraints.extend(self.getVelocityConstraints(X, Y))
 
             # Optimization problem
-            problem = cp.Problem(cp.Minimize( cp.quad_form(X, A) + q1.T @ X + C1 \
-                                           +  cp.quad_form(Y, B) + q2.T @ Y + C2),
+            problem = cp.Problem(cp.Minimize(20 * (cp.quad_form(X, A) + q1.T @ X + C1 \
+                                           +  cp.quad_form(Y, B) + q2.T @ Y + C2)),
                                               constraints)
 
             # Solve the problem
-            problem.solve(verbose = verbose)
+            problem.solve(verbose = verbose, warm_start = True)
 
             # print(X.value)
             X_star = np.expand_dims(np.array(X.value), axis = -1) 
             Y_star = np.expand_dims(np.array(Y.value), axis = -1)
 
             # print(X_star, Y_star)
-            self.plot(X_star, Y_star)
+        self.plot(X_star, Y_star)
 
         return X_star, Y_star
 
@@ -197,9 +194,9 @@ if __name__ == "__main__":
 
     ############### Settings ##############################
     x_start = [0, 0] 
-    x_goal = [8, 12] 
-    v_max = 1
-    steps = 20
+    x_goal = [2, 12] 
+    v_max = 0.8
+    steps = 30
     delta_t = 1
     obstacles = [[2, 8, 1],
                  [3, 4, 1], 
@@ -207,6 +204,8 @@ if __name__ == "__main__":
                  [2, 2, 0.5], 
                  [8, 6, 1], 
                  [8, 2, 1]]
+
+    # obstacles = []
     #######################################################
 
 
