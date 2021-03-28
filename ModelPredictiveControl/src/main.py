@@ -194,7 +194,7 @@ if __name__ == "__main__":
 
     ############### Settings ##############################
     x_start = [0, 0] 
-    x_goal = [2, 12] 
+    x_goal = [11, 10] 
     v_max = 0.8
     steps = 30
     delta_t = 1
