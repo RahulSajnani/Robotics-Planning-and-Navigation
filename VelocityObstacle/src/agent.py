@@ -22,8 +22,8 @@ class Robot:
 
         dir_vector = self.destination - self.position
 
-        norm_dir_vector = 10 * np.linalg.norm(dir_vector)
-        if norm_dir_vector:
+        norm_dir_vector = 5 * np.linalg.norm(dir_vector)
+        if norm_dir_vector >= 1:
             dir_vector = dir_vector / norm_dir_vector
         self.velocity = dir_vector
 
@@ -54,8 +54,17 @@ class Robot:
         '''
         return self.position
     
-    
+    def step(self, velocity = None):
+        '''
+        Take step in the world
+        '''
 
+        if velocity is None:
+            self.setInitialVelocity()
+        else:
+            self.setVelocity(velocity + self.velocity)
+        
+        self.moveByVelocity_dt()
 
 if __name__=="__main__":
 

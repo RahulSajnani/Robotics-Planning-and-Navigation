@@ -9,4 +9,6 @@ env:
   obstacles_destination: [[2, 3], [4, 5]]
   # Other configs
   delta_t: 0.1
-  
+  v_min: 1
+  v_max: 10
+  destination_region: 0.2
