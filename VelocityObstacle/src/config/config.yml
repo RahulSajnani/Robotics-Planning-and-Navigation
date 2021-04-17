@@ -1,0 +1,12 @@
+env:
+  # Robot
+  robot_position: [1, 2]
+  robot_radius: 3
+  robot_destination: [5, 10]
+  # Obstacles
+  obstacles_position: [[5, 0], [3, 4]]
+  obstacles_radius: [2, 5]
+  obstacles_destination: [[2, 3], [4, 5]]
+  # Other configs
+  delta_t: 0.1
+  
