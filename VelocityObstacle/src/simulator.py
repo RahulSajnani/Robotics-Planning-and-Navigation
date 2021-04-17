@@ -27,7 +27,7 @@ class Simulator:
         '''
 
         # Velocity obstacles class to avoid dyamic obstacles
-        self.vo = VelocityObstacle()
+        self.vo = VelocityObstacle(v_min = self.config["v_min"], v_max = self.config["v_max"])
         self.obstacles = []
 
         # Initialize obstacles
@@ -44,16 +44,23 @@ class Simulator:
                         dt = self.config["delta_t"], 
                         destination=self.config["robot_destination"])
         
-    
-    
-    def run():
-        for i in range(500):            
-            for obs in obstacles:
+    def run(self):
+
+        while np.linalg.norm(self.bot.position - self.bot.destination) > self.config["destination_region"]:
+            
+
+            
+            delta_v = self.vo.sampleVelocity(self.bot, self.obstacles)
+            if np.linalg.norm(delta_v) > 0:
+                print("change of path", delta_v)
+                print("#"*100)
+                exit()
+            for obs in self.obstacles:
                 obs.step()
                 print("Obstacle dest: ", obs.destination, " position ", obs.position)
             
-            bot.step()
-            print("Bot dest: ", bot.destination, " position ", bot.position)
+            self.bot.step(velocity = delta_v)
+            print("Bot dest: ", self.bot.destination, " position ", self.bot.position)
             
 
 
@@ -61,7 +68,7 @@ class Simulator:
 @hydra.main(config_name = "config/config.yml")
 def main(cfg):
     sim = Simulator(cfg)
-
+    sim.run()
 
 if __name__=="__main__":
     main()
