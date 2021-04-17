@@ -8,7 +8,7 @@ class VelocityObstacle:
     def __init__(self, v_min, v_max):
         
         self.velocity_samples = np.linspace(0, v_max, 20)    
-        self.angle_samples = np.linspace(0, 2 * np.pi, 36)
+        self.angle_samples = np.linspace(0, 2*np.pi, 60)
 
     def getVelocityObstacleConstraint(self, robot, obstacle, delta_v):
         '''
@@ -17,16 +17,16 @@ class VelocityObstacle:
 
         radius = robot.radius + obstacle.radius
         r = obstacle.position - robot.position
-        v_ro = obstacle.velocity - robot.velocity
+        v_ro = (robot.velocity - obstacle.velocity)
 
 
-        v_new = v_ro + delta_v
+        v_new = (v_ro + delta_v)
         norm = np.linalg.norm(v_new)
-        if norm:
+        if norm > 0:
             v_new = v_new / norm
 
-        constraint = (np.dot(r, r) - np.dot(r, v_ro)**2 >= radius**2)
-        
+        constraint = (np.dot(r, r) - np.dot(r, v_new)**2 >= radius**2)
+        # print(r, v_new)        
         return constraint
 
     def rotate(self, vector, theta):
@@ -49,7 +49,6 @@ class VelocityObstacle:
             for angle in self.angle_samples: 
     
                 delta_v = self.rotate((delta_init * velocity), angle)
-                # print(delta_v * 0.1)
                 constraint_satisfied = False
                 for obs in obstacles:
                     constraint_satisfied = self.getVelocityObstacleConstraint(robot, obs, delta_v)    
@@ -58,9 +57,9 @@ class VelocityObstacle:
                 if not constraint_satisfied:
                     continue
 
-                print("out:", delta_v)
                 return delta_v
-        return delta_init * 0   
+        print("sad")
+        return 0   
 
 if __name__=="__main__":
     pass

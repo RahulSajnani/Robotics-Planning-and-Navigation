@@ -44,24 +44,37 @@ class Simulator:
                         dt = self.config["delta_t"], 
                         destination=self.config["robot_destination"])
         
+
+    def plotCircle(self, x, y, radius, color = "black"):
+        
+        circle1 = plt.Circle((x, y), radius, color='black')
+        plt.gca().add_patch(circle1)
+    
     def run(self):
 
         while np.linalg.norm(self.bot.position - self.bot.destination) > self.config["destination_region"]:
-            
-
-            
+            # if np.linalg.norm(delta_v) > 0:
+            #     print("change of path", delta_v)
+            #     print("#"*100)
+                # exit()
             delta_v = self.vo.sampleVelocity(self.bot, self.obstacles)
-            if np.linalg.norm(delta_v) > 0:
-                print("change of path", delta_v)
-                print("#"*100)
-                exit()
+
             for obs in self.obstacles:
                 obs.step()
                 print("Obstacle dest: ", obs.destination, " position ", obs.position)
-            
+                plt.plot(obs.position[0], obs.position[1], "ro")
+                # self.plotCircle(obs.position[0], obs.position[1], obs.radius)
+
             self.bot.step(velocity = delta_v)
-            print("Bot dest: ", self.bot.destination, " position ", self.bot.position)
+            plt.plot(self.bot.position[0], self.bot.position[1], "bo")
+            print(self.bot.velocity)
+            # self.plotCircle(self.bot.position[0], self.bot.position[1], self.bot.radius, "red")
+            plt.pause(0.1)
+            # print("Bot dest: ", self.bot.destination, " position ", self.bot.position)
             
+            # plt.pause(0.01)
+        plt.axis("equal")
+        plt.show()
 
 
 

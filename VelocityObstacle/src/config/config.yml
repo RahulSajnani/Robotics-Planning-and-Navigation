@@ -4,11 +4,11 @@ env:
   robot_radius: 1
   robot_destination: [10, 10]
   # Obstacle
-  obstacles_position: [[2, 2], [5, 5]]
+  obstacles_position: [[4, 2], [7, 5]]
   obstacles_radius: [1, 1]
-  obstacles_destination: [[5, 5], [7, 7]]
+  obstacles_destination: [[1, 4], [3, 10]]
   # Other configs
   delta_t: 0.1
   v_min: 1
-  v_max: 50
+  v_max: 20
   destination_region: 0.2

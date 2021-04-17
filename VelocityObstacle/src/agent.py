@@ -22,7 +22,7 @@ class Robot:
 
         dir_vector = self.destination - self.position
 
-        norm_dir_vector = 5 * np.linalg.norm(dir_vector)
+        norm_dir_vector = 2 * np.linalg.norm(dir_vector)
         if norm_dir_vector >= 1:
             dir_vector = dir_vector / norm_dir_vector
         self.velocity = dir_vector
@@ -60,11 +60,13 @@ class Robot:
         '''
 
         if velocity is None:
-            self.setInitialVelocity()
+            if np.linalg.norm(self.velocity) != 0:
+                self.setInitialVelocity()
         else:
             self.setVelocity(velocity + self.velocity)
         
         self.moveByVelocity_dt()
+        self.setInitialVelocity()
 
 if __name__=="__main__":
 
