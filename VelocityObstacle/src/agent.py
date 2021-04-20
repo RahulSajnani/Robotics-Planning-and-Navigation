@@ -22,7 +22,7 @@ class Robot:
 
         dir_vector = self.destination - self.position
 
-        norm_dir_vector = 2 * np.linalg.norm(dir_vector)
+        norm_dir_vector = np.linalg.norm(dir_vector)
         if norm_dir_vector >= 1:
             dir_vector = dir_vector / norm_dir_vector
         self.velocity = dir_vector

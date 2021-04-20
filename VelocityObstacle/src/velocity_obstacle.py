@@ -1,14 +1,15 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from agent import Robot
+import random
 
 
 class VelocityObstacle:
 
-    def __init__(self, v_min, v_max):
+    def __init__(self, v_max):
         
-        self.velocity_samples = np.linspace(0, v_max, 20)    
-        self.angle_samples = np.linspace(0, 2*np.pi, 60)
+        self.v_max = v_max
+        pass
 
     def getVelocityObstacleConstraint(self, robot, obstacle, delta_v):
         '''
@@ -43,23 +44,34 @@ class VelocityObstacle:
         '''
         Sample velocity change to move the robot
         '''
-        
-        delta_init = np.array([1, 0])
-        for velocity in self.velocity_samples:
-            for angle in self.angle_samples: 
-    
-                delta_v = self.rotate((delta_init * velocity), angle)
-                constraint_satisfied = False
-                for obs in obstacles:
-                    constraint_satisfied = self.getVelocityObstacleConstraint(robot, obs, delta_v)    
-                    if not constraint_satisfied:
-                        break
-                if not constraint_satisfied:
-                    continue
 
-                return delta_v
-        print("sad")
-        return 0   
+        delta_init = np.array([1, 0])        
+        constraint_satisfied = False
+        first = True
+        
+        while not constraint_satisfied:
+            velocity = np.random.uniform(0, self.v_max)
+            if first:
+                # Allow going in same direction if constraint is satisfied
+                velocity = 0
+                first = False
+            
+            angle = np.random.uniform(-np.pi, np.pi)
+            
+            delta_v = self.rotate((delta_init * velocity), angle)
+            constraint_satisfied = False
+            for obs in obstacles:
+                constraint_satisfied = self.getVelocityObstacleConstraint(robot, obs, delta_v)    
+                if not constraint_satisfied:
+                    break
+            
+            if not constraint_satisfied:
+                continue
+
+            return delta_v
+    
+        print ("No trajectory found.")
+        return -robot.velocity
 
 if __name__=="__main__":
     pass

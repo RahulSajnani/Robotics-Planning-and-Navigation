@@ -27,7 +27,7 @@ class Simulator:
         '''
 
         # Velocity obstacles class to avoid dyamic obstacles
-        self.vo = VelocityObstacle(v_min = self.config["v_min"], v_max = self.config["v_max"])
+        self.vo = VelocityObstacle(v_max = self.config["v_max"])
         self.obstacles = []
 
         # Initialize obstacles
@@ -53,18 +53,13 @@ class Simulator:
     def run(self):
 
         while np.linalg.norm(self.bot.position - self.bot.destination) > self.config["destination_region"]:
-            # if np.linalg.norm(delta_v) > 0:
-            #     print("change of path", delta_v)
-            #     print("#"*100)
-                # exit()
             delta_v = self.vo.sampleVelocity(self.bot, self.obstacles)
 
             for obs in self.obstacles:
                 obs.step()
                 print("Obstacle dest: ", obs.destination, " position ", obs.position)
                 plt.plot(obs.position[0], obs.position[1], "ro")
-                # self.plotCircle(obs.position[0], obs.position[1], obs.radius)
-
+         
             self.bot.step(velocity = delta_v)
             plt.plot(self.bot.position[0], self.bot.position[1], "bo")
             print(self.bot.velocity)
