@@ -4,6 +4,7 @@ from velocity_obstacle import VelocityObstacle
 from agent import Robot
 import hydra
 from omegaconf import DictConfig, OmegaConf
+import matplotlib.patches as mpatches
 
 class Simulator:
 
@@ -51,8 +52,13 @@ class Simulator:
         plt.gca().add_patch(circle1)
     
     def run(self):
-        fig = plt.figure()
+        figManager = plt.get_current_fig_manager()
+        figManager.window.showMaximized()
         while np.linalg.norm(self.bot.position - self.bot.destination) > self.config["destination_region"]:
+            blue_patch = mpatches.Patch(color='blue', label="Robot")
+            black_patch = mpatches.Patch(color='black', label="Obstacles")
+            plt.legend(handles=[black_patch, blue_patch])
+        
             delta_v = self.vo.sampleVelocity(self.bot, self.obstacles)
             
             for obs in self.obstacles:
@@ -67,6 +73,7 @@ class Simulator:
 
             self.plotCircle(self.bot.position[0], self.bot.position[1], self.bot.radius, "blue")
             plt.axis("equal")
+            plt.title("Velocity obstacle for dynamic obstacle avoidance")
             plt.pause(0.1)
             plt.clf()
         plt.show()

@@ -3,7 +3,6 @@ import matplotlib.pyplot as plt
 from agent import Robot
 import random
 
-
 class VelocityObstacle:
 
     def __init__(self, v_max):

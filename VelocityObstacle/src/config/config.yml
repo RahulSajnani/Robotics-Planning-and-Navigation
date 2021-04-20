@@ -6,8 +6,8 @@ env:
   # Obstacle
   obstacles_position: [[4, 2], [7, 5], [5, 3], [12, 10]]
   obstacles_radius: [2, 2, 2, 1]
-  obstacles_destination: [[1, 8], [5, 5], [5, -1], [7, 9]]
+  obstacles_destination: [[1, 8], [5, 3], [5, -1], [7, 9]]
   # Other configs
   delta_t: 1
-  v_max: 3
+  v_max: 2
   destination_region: 0.2
