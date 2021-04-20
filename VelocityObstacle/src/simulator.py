@@ -47,29 +47,31 @@ class Simulator:
 
     def plotCircle(self, x, y, radius, color = "black"):
         
-        circle1 = plt.Circle((x, y), radius, color='black')
+        circle1 = plt.Circle((x, y), radius, color=color)
         plt.gca().add_patch(circle1)
     
     def run(self):
-
+        fig = plt.figure()
         while np.linalg.norm(self.bot.position - self.bot.destination) > self.config["destination_region"]:
             delta_v = self.vo.sampleVelocity(self.bot, self.obstacles)
-
+            
             for obs in self.obstacles:
                 obs.step()
-                print("Obstacle dest: ", obs.destination, " position ", obs.position)
-                plt.plot(obs.position[0], obs.position[1], "ro")
-         
+                path = obs.getPath()
+                plt.plot(path[:, 0], path[:, 1])
+                self.plotCircle(obs.position[0], obs.position[1], obs.radius)
+
             self.bot.step(velocity = delta_v)
-            plt.plot(self.bot.position[0], self.bot.position[1], "bo")
-            print(self.bot.velocity)
-            # self.plotCircle(self.bot.position[0], self.bot.position[1], self.bot.radius, "red")
+            path = self.bot.getPath()
+            plt.plot(path[:, 0], path[:, 1])
+
+            self.plotCircle(self.bot.position[0], self.bot.position[1], self.bot.radius, "blue")
+            plt.axis("equal")
             plt.pause(0.1)
-            # print("Bot dest: ", self.bot.destination, " position ", self.bot.position)
-            
-            # plt.pause(0.01)
-        plt.axis("equal")
+            plt.clf()
         plt.show()
+            
+        print("Reached goal")
 
 
 

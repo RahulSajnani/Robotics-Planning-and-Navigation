@@ -13,6 +13,7 @@ class Robot:
         self.velocity = 0
         self.dt = dt
         self.destination = destination
+        self.agent_path = [init_position]
         self.setInitialVelocity()
 
     def setInitialVelocity(self):
@@ -34,6 +35,13 @@ class Robot:
 
         self.velocity = velocity
 
+    def getPath(self):
+        '''
+        Return agent path
+        '''
+        if len(self.agent_path) == 1:
+            return np.array([self.agent_path])
+        return np.vstack(self.agent_path)
         
     def moveByVelocity_dt(self):
         '''
@@ -47,6 +55,8 @@ class Robot:
         if np.linalg.norm(self.position - self.destination) < 0.2:
             self.velocity = 0
         self.position = self.position + self.velocity * self.dt
+        self.agent_path.append(self.position)
+
 
     def getPosition(self):
         '''
