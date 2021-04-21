@@ -2,7 +2,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 from velocity_obstacle import VelocityObstacle
 from agent import Robot
-import hydra
 from omegaconf import DictConfig, OmegaConf
 import matplotlib.patches as mpatches
 
@@ -74,6 +73,7 @@ class Simulator:
             self.plotCircle(self.bot.position[0], self.bot.position[1], self.bot.radius, "blue")
             plt.axis("equal")
             plt.title("Velocity obstacle for dynamic obstacle avoidance")
+            plt.grid(True)
             plt.pause(0.1)
             plt.clf()
         plt.show()
@@ -82,10 +82,12 @@ class Simulator:
 
 
 
-@hydra.main(config_name = "config/config.yml")
+
 def main(cfg):
     sim = Simulator(cfg)
     sim.run()
 
 if __name__=="__main__":
-    main()
+
+    cfg = OmegaConf.load("config/config.yaml")
+    main(cfg)

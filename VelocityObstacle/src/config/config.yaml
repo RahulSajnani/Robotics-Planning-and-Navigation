@@ -7,7 +7,13 @@ env:
   obstacles_position: [[4, 2], [7, 5], [5, 3], [12, 10]]
   obstacles_radius: [2, 2, 2, 1]
   obstacles_destination: [[1, 8], [5, 3], [5, -1], [7, 9]]
+  # obstacles_position: [[4, 4], [12, 10]]
+  # obstacles_radius: [2, 2 ]
+  # obstacles_destination: [[6, 6], [10, 3]]
+  # obstacles_position: [[4, 4], [12, 10], [7, 7]]
+  # obstacles_radius: [2, 2, 3]
+  # obstacles_destination: [[6, 6], [10, 3], [7, 13]]
   # Other configs
   delta_t: 1
-  v_max: 2
+  v_max: 1
   destination_region: 0.2
