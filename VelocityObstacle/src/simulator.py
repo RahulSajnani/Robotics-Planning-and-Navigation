@@ -54,6 +54,7 @@ class Simulator:
         figManager = plt.get_current_fig_manager()
         figManager.window.showMaximized()
         while np.linalg.norm(self.bot.position - self.bot.destination) > self.config["destination_region"]:
+            plt.clf()
             blue_patch = mpatches.Patch(color='blue', label="Robot")
             black_patch = mpatches.Patch(color='black', label="Obstacles")
             plt.legend(handles=[black_patch, blue_patch])
@@ -75,9 +76,8 @@ class Simulator:
             plt.title("Velocity obstacle for dynamic obstacle avoidance")
             plt.grid(True)
             plt.pause(0.1)
-            plt.clf()
         plt.show()
-            
+        plt.gcf()
         print("Reached goal")
 
 
