@@ -10,8 +10,8 @@ This repository contains scripts for basic planning and navigation algorithms im
 The robot has to navigate a two dimensional space, avoiding known locations with
 obstacles, traveling from its initial location to a goal location. Implement the RRT
 path planning algorithm for two cases, (1) Holonomic Robot and (2) Non-Holonomic
-Robot. Assume localization information i.e., robot’s initial position, obstacle location,
-goal location is given.
+Robot. This assumes that localization information i.e., robot’s initial position, obstacle location,
+goal location are given.
 
 
 
@@ -34,6 +34,9 @@ we optimize for the velocities at each time step.
 
 
 ### Dynamic Collision Avoidance using collision cones
+
+Collision Cone formulation is a planning algorithm that transforms dynamic obstacles to the
+robot’s perspective and avoids them. This assumes that the location and velocity of the obstacles are known.
 
 ![](./VelocityObstacle/screenshots/velocity_obstacle_diagram.png)
 
